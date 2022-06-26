@@ -5,8 +5,15 @@
 package it.polito.tdp.itunes;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.itunes.model.Genre;
 import it.polito.tdp.itunes.model.Model;
+import it.polito.tdp.itunes.model.Track;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -34,10 +41,10 @@ public class FXMLController {
     private Button btnMassimo; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbCanzone"
-    private ComboBox<?> cmbCanzone; // Value injected by FXMLLoader
+    private ComboBox<Track> cmbCanzone; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbGenere"
-    private ComboBox<?> cmbGenere; // Value injected by FXMLLoader
+    private ComboBox<Genre> cmbGenere; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtMemoria"
     private TextField txtMemoria; // Value injected by FXMLLoader
@@ -47,18 +54,48 @@ public class FXMLController {
 
     @FXML
     void btnCreaLista(ActionEvent event) {
-
+    	Track traccia = cmbCanzone.getValue();
+    	String dimensione = txtMemoria.getText();
+    	int d = Integer.parseInt(dimensione);
+    	if(traccia==null) {
+    		txtResult.setText("Seleziona canzone preferita.");
+    		return;
+    	} else {
+    		//try {
+//    			dimensione = Integer.parseInt(txtMemoria.getText());
+//    		} catch (NumberFormatException e) {
+//        		txtResult.setText("Inserisci dimensione valida.");
+//			}
+    		txtResult.setText(model.cercaLista(traccia, d).size()+"");
+    	}
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-
+    	txtResult.clear();
+    	Genre genere = cmbGenere.getValue();
+    	if(genere==null) {
+    		txtResult.setText("Seleziona genere.");
+    		return;
+    	} else {
+    		model.getTracks(genere);
+    		model.adiacenze(genere);
+    		txtResult.setText(model.creaGrafo());
+    		btnMassimo.setDisable(false);;
+    		cmbCanzone.getItems().addAll(model.getVertex());
+    	}
     }
 
     @FXML
     void doDeltaMassimo(ActionEvent event) {
-    	
-    	
+    	Genre genere = cmbGenere.getValue();
+    	if(genere==null) {
+    		txtResult.setText("Seleziona prima un genere e crea il grafo.");
+    		return;
+    	} else {
+    		txtResult.setText("COPPIA CANZONI DELTA MASSIMO:\n"+model.adiacenzaMax());
+    		btnMassimo.setDisable(true);;
+    	}
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -75,6 +112,15 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	List<Genre> generi = new ArrayList<>(model.getGeneri());
+    	Collections.sort(generi, new Comparator<Genre>() {
+
+			@Override
+			public int compare(Genre o1, Genre o2) {
+				return o1.getName().compareTo(o2.getName());
+			}
+		});
+    	cmbGenere.getItems().addAll(generi);
     }
 
 }

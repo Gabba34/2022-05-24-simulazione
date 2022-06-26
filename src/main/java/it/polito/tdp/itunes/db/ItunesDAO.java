@@ -7,6 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
+import it.polito.tdp.itunes.model.Adiacenza;
 import it.polito.tdp.itunes.model.Album;
 import it.polito.tdp.itunes.model.Artist;
 import it.polito.tdp.itunes.model.Genre;
@@ -139,6 +142,45 @@ public class ItunesDAO {
 		return result;
 	}
 
+	public List<Track> getTrackByGenre(Genre g){
+		String sql = "SELECT t.* "
+				+ "FROM track t, genre g "
+				+ "WHERE t.GenreId = g.GenreId AND g.Name = ?";
+		List<Track> tracce = new ArrayList<>();
+		try {
+			Connection connection = DBConnect.getConnection();
+			PreparedStatement statement = connection.prepareStatement(sql);
+			statement.setString(1, g.getName());
+			ResultSet resultSet = statement.executeQuery();
+			while (resultSet.next()) {
+				tracce.add(new Track(resultSet.getInt("TrackId"), resultSet.getString("Name"), 
+						resultSet.getString("Composer"), resultSet.getInt("Milliseconds"), 
+						resultSet.getInt("Bytes"),resultSet.getDouble("UnitPrice")));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");		
+		}
+		return tracce;
+	}
 	
-	
+	public List<Adiacenza> getAdiacenze(Genre genre, Map<Integer, Track> tracce){
+		String sql = "SELECT t1.TrackId AS ID1 , t2.TrackId AS ID2, ABS(t1.Milliseconds - t2.Milliseconds) AS DELTA "
+				+ "FROM track t1, track t2 "
+				+ "WHERE t1.TrackId>t2.TrackId AND t1.MediaTypeId=t2.MediaTypeId AND t1.GenreId= ? AND t1.GenreId=t2.GenreID";
+		List<Adiacenza> adiacenze = new ArrayList<>();
+		try {
+			Connection connection = DBConnect.getConnection();
+			PreparedStatement statement = connection.prepareStatement(sql);
+			statement.setInt(1, genre.getGenreId());
+			ResultSet resultSet = statement.executeQuery();
+			while(resultSet.next()) {
+				adiacenze.add(new Adiacenza(tracce.get(resultSet.getInt("ID1")), tracce.get(resultSet.getInt("ID2")), resultSet.getDouble("DELTA")));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");		
+		}
+		return adiacenze;
+	}
 }
